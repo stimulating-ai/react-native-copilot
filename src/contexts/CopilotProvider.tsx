@@ -23,6 +23,7 @@ type Events = {
   start: undefined;
   stop: undefined;
   stepChange: Step | undefined;
+  stepMove: undefined;
 };
 
 interface CopilotContextType {
@@ -31,7 +32,7 @@ interface CopilotContextType {
   currentStep: Step | undefined;
   start: (
     fromStep?: string,
-    suppliedScrollView?: ScrollView | null
+    suppliedScrollView?: ScrollView | null,
   ) => Promise<void>;
   stop: () => Promise<void>;
   goToNext: () => Promise<void>;
@@ -96,7 +97,7 @@ export const CopilotProvider = ({
         y: size.y - OFFSET_WIDTH / 2 + verticalOffset,
       });
     },
-    [verticalOffset]
+    [verticalOffset],
   );
 
   const setCurrentStep = useCallback(
@@ -112,7 +113,7 @@ export const CopilotProvider = ({
             (_x, y, _w, h) => {
               const yOffset = y > 0 ? y - h / 2 : 0;
               scrollView.scrollTo({ y: yOffset, animated: false });
-            }
+            },
           );
         }
       }
@@ -120,13 +121,15 @@ export const CopilotProvider = ({
       setTimeout(
         () => {
           if (move && step) {
-            void moveModalToStep(step);
+            void moveModalToStep(step).then(() => {
+              copilotEvents.emit("stepMove");
+            });
           }
         },
-        scrollView != null ? 100 : 0
+        scrollView != null ? 100 : 0,
       );
     },
-    [copilotEvents, moveModalToStep, scrollView, setCurrentStepState]
+    [copilotEvents, moveModalToStep, scrollView, setCurrentStepState],
   );
 
   const start = useCallback(
@@ -163,7 +166,7 @@ export const CopilotProvider = ({
       setCurrentStep,
       setVisibility,
       steps,
-    ]
+    ],
   );
 
   const stop = useCallback(async () => {
@@ -179,7 +182,7 @@ export const CopilotProvider = ({
     async (n: number) => {
       await setCurrentStep(getNthStep(n));
     },
-    [getNthStep, setCurrentStep]
+    [getNthStep, setCurrentStep],
   );
 
   const prev = useCallback(async () => {
@@ -218,16 +221,13 @@ export const CopilotProvider = ({
       isLastStep,
       currentStepNumber,
       totalStepsNumber,
-    ]
+    ],
   );
 
   return (
     <CopilotContext.Provider value={value}>
       <>
-        <CopilotModal
-          ref={modal}
-          {...rest}
-        />
+        <CopilotModal ref={modal} {...rest} />
         {children}
       </>
     </CopilotContext.Provider>
