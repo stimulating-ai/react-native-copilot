@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { type RefObject, useEffect, useMemo, useRef } from "react";
 import { type NativeMethods } from "react-native";
 
 import { useCopilot } from "../contexts/CopilotProvider";
@@ -50,7 +50,7 @@ export const CopilotStep = ({
   };
 
   useEffect(() => {
-    if (active) {
+    if (active && wrapperRef.current) {
       if (registeredName.current && registeredName.current !== name) {
         unregisterStep(registeredName.current);
       }
@@ -59,7 +59,7 @@ export const CopilotStep = ({
         text,
         order,
         measure,
-        wrapperRef,
+        wrapperRef: wrapperRef as RefObject<NativeMethods>,
         visible: true,
       });
       registeredName.current = name;
@@ -81,7 +81,7 @@ export const CopilotStep = ({
       ref: wrapperRef,
       onLayout: () => {}, // Android hack
     }),
-    []
+    [],
   );
 
   return React.cloneElement(children, { copilot: copilotProps });
