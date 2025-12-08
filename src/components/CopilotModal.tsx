@@ -160,29 +160,20 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         arrow.position = "absolute";
 
         if (verticalPosition === "bottom") {
-          let tooltipTop = rect.y + rect.height + margin;
-          // Clamp tooltip position to stay within safe area
-          const maxTop = newMeasuredLayout.height - insets.bottom - margin;
-          tooltipTop = Math.min(tooltipTop, maxTop);
-          tooltipTop = Math.max(tooltipTop, insets.top + margin);
-          tooltip.top = tooltipTop;
+          tooltip.top = Math.max(rect.y + rect.height + margin, insets.top + margin);
           arrow.borderBottomColor = arrowColor;
           arrow.borderTopColor = "transparent";
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.top = tooltip.top - arrowSize * 2;
         } else {
-          let tooltipBottom = newMeasuredLayout.height - (rect.y - margin);
-          // Clamp tooltip position to stay within safe area
-          const maxBottom = newMeasuredLayout.height - insets.top - margin;
-          tooltipBottom = Math.min(tooltipBottom, maxBottom);
-          tooltipBottom = Math.max(tooltipBottom, insets.bottom + margin);
-          tooltip.bottom = tooltipBottom;
+          tooltip.top = insets.top + margin;
           arrow.borderTopColor = arrowColor;
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.borderBottomColor = "transparent";
-          arrow.bottom = tooltip.bottom - arrowSize * 2;
+          arrow.bottom =
+            newMeasuredLayout.height - (rect.y - margin) - arrowSize * 2;
         }
 
         if (horizontalPosition === "left") {
