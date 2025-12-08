@@ -307,8 +307,8 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         supportedOrientations={["portrait", "landscape"]}
       >
         <View style={styles.container} onLayout={handleLayoutChange}>
-          {contentVisible && renderMask()}
           {contentVisible && renderTooltip()}
+          {contentVisible && renderMask()}
         </View>
       </Modal>
     );
