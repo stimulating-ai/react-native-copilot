@@ -94,6 +94,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const [isAnimated, setIsAnimated] = useState(false);
     const [containerVisible, setContainerVisible] = useState(false);
     const [tooltipHeight, setTooltipHeight] = useState(0);
+    const tooltipHeightRef = useRef(0);
     const currentRectRef = useRef<LayoutRectangle | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
     const [tooltipOpacity] = useState(
@@ -197,9 +198,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.top = tooltip.top - arrowSize * 2;
         } else {
           tooltip.bottom = newMeasuredLayout.height - (rect.y - margin);
-          // Clamp so top of tooltip doesn't exceed safe area (requires tooltipHeight)
-          if (tooltipHeight > 0) {
-            const maxBottom = newMeasuredLayout.height - tooltipHeight - insets.top - margin;
+          // Clamp so top of tooltip doesn't exceed safe area (use ref for latest value)
+          if (tooltipHeightRef.current > 0) {
+            const maxBottom = newMeasuredLayout.height - tooltipHeightRef.current - insets.top - margin;
             tooltip.bottom = Math.min(tooltip.bottom, maxBottom);
           }
           arrow.borderTopColor = arrowColor;
@@ -272,21 +273,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         isAnimated,
         arrowSize,
         margin,
-        tooltipHeight,
       ],
     );
 
     animateMoveRef.current = _animateMove;
-
-    useEffect(() => {
-      if (
-        tooltipHeight > 0 &&
-        currentRectRef.current &&
-        animateMoveRef.current
-      ) {
-        void animateMoveRef.current(currentRectRef.current);
-      }
-    }, [tooltipHeight]);
 
     const animateMove = useCallback<CopilotModalHandle["animateMove"]>(
       async (rect) => {
@@ -310,6 +300,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       setContainerVisible(false);
       setLayout(undefined);
       setTooltipHeight(0);
+      tooltipHeightRef.current = 0;
       tooltipOpacity.setValue(OPACITY_STARTING_VALUE);
     };
 
@@ -421,7 +412,13 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
               { opacity: tooltipOpacity },
             ]}
             onLayout={(e) => {
-              setTooltipHeight(e.nativeEvent.layout.height);
+              const newHeight = e.nativeEvent.layout.height;
+              tooltipHeightRef.current = newHeight;
+              setTooltipHeight(newHeight);
+              // Directly trigger recalculation with latest height
+              if (newHeight > 0 && currentRectRef.current && animateMoveRef.current) {
+                void animateMoveRef.current(currentRectRef.current);
+              }
             }}
           >
             <TooltipComponent labels={labels} />
