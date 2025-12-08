@@ -93,12 +93,26 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const [tooltipHeight, setTooltipHeight] = useState(0);
     const currentRectRef = useRef<LayoutRectangle | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
+    const [tooltipOpacity] = useState(() => new Animated.Value(0));
 
     useEffect(() => {
       if (visible) {
         setContainerVisible(true);
       }
     }, [visible]);
+
+    useEffect(() => {
+      if (tooltipHeight > 0) {
+        Animated.timing(tooltipOpacity, {
+          toValue: 1,
+          duration: 100,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      } else {
+        tooltipOpacity.setValue(0);
+      }
+    }, [tooltipHeight, tooltipOpacity]);
 
     useEffect(() => {
       if (!visible) {
@@ -377,11 +391,23 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
             <StepNumberComponent />
           </Animated.View>
           {!!arrowSize && (
-            <Animated.View key="arrow" style={[styles.arrow, arrowStyles]} />
+            <Animated.View
+              key="arrow"
+              style={[
+                styles.arrow,
+                arrowStyles,
+                { opacity: tooltipOpacity },
+              ]}
+            />
           )}
           <Animated.View
             key="tooltip"
-            style={[styles.tooltip, tooltipStyles, tooltipStyle]}
+            style={[
+              styles.tooltip,
+              tooltipStyles,
+              tooltipStyle,
+              { opacity: tooltipOpacity },
+            ]}
             onLayout={(e) => {
               setTooltipHeight(e.nativeEvent.layout.height);
             }}
