@@ -31,6 +31,8 @@ import {
   styles,
 } from "./style";
 
+const OPACITY_STARTING_VALUE = 0.02;
+
 type Props = CopilotOptions;
 
 const noop = () => {};
@@ -93,7 +95,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const [tooltipHeight, setTooltipHeight] = useState(0);
     const currentRectRef = useRef<LayoutRectangle | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
-    const [tooltipOpacity] = useState(() => new Animated.Value(0));
+    const [tooltipOpacity] = useState(
+      () => new Animated.Value(OPACITY_STARTING_VALUE),
+    );
 
     useEffect(() => {
       if (visible) {
@@ -110,7 +114,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           useNativeDriver: true,
         }).start();
       } else {
-        tooltipOpacity.setValue(0);
+        tooltipOpacity.setValue(OPACITY_STARTING_VALUE);
       }
     }, [tooltipHeight, tooltipOpacity]);
 
@@ -178,7 +182,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         arrow.position = "absolute";
 
         if (verticalPosition === "bottom") {
-          tooltip.top = Math.max(rect.y + rect.height + margin, insets.top + margin);
+          tooltip.top = Math.max(
+            rect.y + rect.height + margin,
+            insets.top + margin,
+          );
           arrow.borderBottomColor = arrowColor;
           arrow.borderTopColor = "transparent";
           arrow.borderLeftColor = "transparent";
@@ -269,7 +276,11 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     animateMoveRef.current = _animateMove;
 
     useEffect(() => {
-      if (tooltipHeight > 0 && currentRectRef.current && animateMoveRef.current) {
+      if (
+        tooltipHeight > 0 &&
+        currentRectRef.current &&
+        animateMoveRef.current
+      ) {
         void animateMoveRef.current(currentRectRef.current);
       }
     }, [tooltipHeight]);
@@ -393,11 +404,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           {!!arrowSize && (
             <Animated.View
               key="arrow"
-              style={[
-                styles.arrow,
-                arrowStyles,
-                { opacity: tooltipOpacity },
-              ]}
+              style={[styles.arrow, arrowStyles, { opacity: tooltipOpacity }]}
             />
           )}
           <Animated.View
