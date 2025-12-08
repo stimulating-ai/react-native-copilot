@@ -255,7 +255,8 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       if (tooltipHeight > 0 && currentRectRef.current) {
         void _animateMove(currentRectRef.current);
       }
-    }, [tooltipHeight, _animateMove]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tooltipHeight]);
 
     const animateMove = useCallback<CopilotModalHandle["animateMove"]>(
       async (rect) => {
