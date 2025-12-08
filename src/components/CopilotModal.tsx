@@ -18,6 +18,7 @@ import {
   type LayoutRectangle,
   type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCopilot } from "../contexts/CopilotProvider";
 import type { CopilotOptions } from "../types";
 import { StepNumber } from "./default-ui/StepNumber";
@@ -74,6 +75,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     ref,
   ) {
     const { stop, currentStep, visible } = useCopilot();
+    const insets = useSafeAreaInsets();
     const [tooltipStyles, setTooltipStyles] = useState({});
     const [arrowStyles, setArrowStyles] = useState({});
     const [animatedValues] = useState({
@@ -164,6 +166,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.top = tooltip.top - arrowSize * 2;
+          // Clamp tooltip to not exceed safe area at bottom
+          tooltip.maxHeight =
+            newMeasuredLayout.height - tooltip.top - insets.bottom - margin;
         } else {
           tooltip.bottom = newMeasuredLayout.height - (rect.y - margin);
           arrow.borderTopColor = arrowColor;
@@ -171,6 +176,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.borderRightColor = "transparent";
           arrow.borderBottomColor = "transparent";
           arrow.bottom = tooltip.bottom - arrowSize * 2;
+          // Clamp tooltip to not exceed safe area at top
+          tooltip.maxHeight =
+            newMeasuredLayout.height - tooltip.bottom - insets.top - margin;
         }
 
         if (horizontalPosition === "left") {
@@ -232,6 +240,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         animationDuration,
         arrowColor,
         easing,
+        insets,
         isAnimated,
         arrowSize,
         margin,

@@ -1,6 +1,7 @@
 import "@testing-library/jest-native/extend-expect";
 import { render, screen } from "@testing-library/react-native";
 import React from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   CopilotProvider,
   type useCopilot,
@@ -31,11 +32,13 @@ describe("CopilotStep", () => {
     const WrappedComponent = () => null;
 
     render(
-      <CopilotProvider>
-        <CopilotStep name="Test" order={0} text="Hello">
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep name="Test" order={0} text="Hello">
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
     const wrappedComponentElement = screen.UNSAFE_getByType(WrappedComponent);
 
@@ -58,16 +61,18 @@ describe("CopilotStep", () => {
     } as any);
 
     render(
-      <CopilotProvider>
-        <>
-          <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
-            <WrappedComponent />
-          </CopilotStep>
-          <CopilotStep name="Step 2" order={1} text="And this is step 2">
-            <WrappedComponent />
-          </CopilotStep>
-        </>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <>
+            <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
+              <WrappedComponent />
+            </CopilotStep>
+            <CopilotStep name="Step 2" order={1} text="And this is step 2">
+              <WrappedComponent />
+            </CopilotStep>
+          </>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     expect(registerStepSpy).toHaveBeenCalledWith({
@@ -100,23 +105,27 @@ describe("CopilotStep", () => {
     } as any);
 
     render(
-      <CopilotProvider>
-        <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     screen.rerender(
-      <CopilotProvider>
-        <CopilotStep
-          name="Step 1"
-          order={0}
-          text="Hello! This is the same step with updated text!"
-        >
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep
+            name="Step 1"
+            order={0}
+            text="Hello! This is the same step with updated text!"
+          >
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     expect(registerStepSpy).toHaveBeenCalledWith({
@@ -141,15 +150,21 @@ describe("CopilotStep", () => {
     } as any);
 
     render(
-      <CopilotProvider>
-        <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep name="Step 1" order={0} text="Hello! This is step 1!">
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     // Remove the step from the tree
-    screen.rerender(<CopilotProvider />);
+    screen.rerender(
+      <SafeAreaProvider>
+        <CopilotProvider />
+      </SafeAreaProvider>
+    );
 
     expect(unregisterStepSpy).toHaveBeenCalledWith("Step 1");
   });
@@ -168,19 +183,23 @@ describe("CopilotStep", () => {
     const stepText = "Hello! This is step 1!";
 
     render(
-      <CopilotProvider>
-        <CopilotStep name="Step 1" order={0} text={stepText}>
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep name="Step 1" order={0} text={stepText}>
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     screen.rerender(
-      <CopilotProvider>
-        <CopilotStep name="Step 1 Updated Name" order={0} text={stepText}>
-          <WrappedComponent />
-        </CopilotStep>
-      </CopilotProvider>
+      <SafeAreaProvider>
+        <CopilotProvider>
+          <CopilotStep name="Step 1 Updated Name" order={0} text={stepText}>
+            <WrappedComponent />
+          </CopilotStep>
+        </CopilotProvider>
+      </SafeAreaProvider>
     );
 
     expect(unregisterStepSpy).toHaveBeenCalledWith("Step 1");
