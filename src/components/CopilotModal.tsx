@@ -31,6 +31,7 @@ import {
   styles,
 } from "./style";
 
+// Setting opacity to 0.02 to workaround glass view opacity bug.
 const OPACITY_STARTING_VALUE = 0.02;
 
 type Props = CopilotOptions;
@@ -306,6 +307,8 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       setIsAnimated(false);
       setContainerVisible(false);
       setLayout(undefined);
+      setTooltipHeight(0);
+      tooltipOpacity.setValue(OPACITY_STARTING_VALUE);
     };
 
     const handleStop = () => {
