@@ -92,6 +92,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const [containerVisible, setContainerVisible] = useState(false);
     const [tooltipHeight, setTooltipHeight] = useState(0);
     const currentRectRef = useRef<LayoutRectangle | null>(null);
+    const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
 
     useEffect(() => {
       if (visible) {
@@ -251,11 +252,12 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       ],
     );
 
+    animateMoveRef.current = _animateMove;
+
     useEffect(() => {
-      if (tooltipHeight > 0 && currentRectRef.current) {
-        void _animateMove(currentRectRef.current);
+      if (tooltipHeight > 0 && currentRectRef.current && animateMoveRef.current) {
+        void animateMoveRef.current(currentRectRef.current);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tooltipHeight]);
 
     const animateMove = useCallback<CopilotModalHandle["animateMove"]>(
