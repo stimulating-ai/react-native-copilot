@@ -160,25 +160,29 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         arrow.position = "absolute";
 
         if (verticalPosition === "bottom") {
-          tooltip.top = rect.y + rect.height + margin;
+          let tooltipTop = rect.y + rect.height + margin;
+          // Clamp tooltip position to stay within safe area
+          const maxTop = newMeasuredLayout.height - insets.bottom - margin;
+          tooltipTop = Math.min(tooltipTop, maxTop);
+          tooltipTop = Math.max(tooltipTop, insets.top + margin);
+          tooltip.top = tooltipTop;
           arrow.borderBottomColor = arrowColor;
           arrow.borderTopColor = "transparent";
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.top = tooltip.top - arrowSize * 2;
-          // Clamp tooltip to not exceed safe area at bottom
-          tooltip.maxHeight =
-            newMeasuredLayout.height - tooltip.top - insets.bottom - margin;
         } else {
-          tooltip.bottom = newMeasuredLayout.height - (rect.y - margin);
+          let tooltipBottom = newMeasuredLayout.height - (rect.y - margin);
+          // Clamp tooltip position to stay within safe area
+          const maxBottom = newMeasuredLayout.height - insets.top - margin;
+          tooltipBottom = Math.min(tooltipBottom, maxBottom);
+          tooltipBottom = Math.max(tooltipBottom, insets.bottom + margin);
+          tooltip.bottom = tooltipBottom;
           arrow.borderTopColor = arrowColor;
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.borderBottomColor = "transparent";
           arrow.bottom = tooltip.bottom - arrowSize * 2;
-          // Clamp tooltip to not exceed safe area at top
-          tooltip.maxHeight =
-            newMeasuredLayout.height - tooltip.bottom - insets.top - margin;
         }
 
         if (horizontalPosition === "left") {
