@@ -196,15 +196,12 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.borderRightColor = "transparent";
           arrow.top = tooltip.top - arrowSize * 2;
         } else {
-          const originalBottom = newMeasuredLayout.height - (rect.y - margin);
-          // Clamp tooltip.bottom so the top edge doesn't exceed safe area
-          // Use actual tooltipHeight or estimate based on available space
-          const effectiveTooltipHeight =
-            tooltipHeight > 0
-              ? tooltipHeight
-              : newMeasuredLayout.height - insets.top - insets.bottom - margin * 2;
-          const maxBottom = newMeasuredLayout.height - effectiveTooltipHeight - insets.top - margin;
-          tooltip.bottom = Math.min(originalBottom, Math.max(maxBottom, insets.bottom + margin));
+          tooltip.bottom = newMeasuredLayout.height - (rect.y - margin);
+          // Clamp so top of tooltip doesn't exceed safe area (requires tooltipHeight)
+          if (tooltipHeight > 0) {
+            const maxBottom = newMeasuredLayout.height - tooltipHeight - insets.top - margin;
+            tooltip.bottom = Math.min(tooltip.bottom, maxBottom);
+          }
           arrow.borderTopColor = arrowColor;
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
