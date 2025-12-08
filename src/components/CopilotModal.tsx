@@ -90,6 +90,8 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
 
     const [isAnimated, setIsAnimated] = useState(false);
     const [containerVisible, setContainerVisible] = useState(false);
+    const [tooltipHeight, setTooltipHeight] = useState(0);
+    const currentRectRef = useRef<LayoutRectangle | null>(null);
 
     useEffect(() => {
       if (visible) {
@@ -125,6 +127,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
 
     const _animateMove = useCallback(
       async (rect: LayoutRectangle) => {
+        currentRectRef.current = { ...rect };
         const newMeasuredLayout = await measure();
         if (!androidStatusBarVisible && Platform.OS === "android") {
           rect.y -= StatusBar.currentHeight ?? 0;
@@ -167,13 +170,18 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.borderRightColor = "transparent";
           arrow.top = tooltip.top - arrowSize * 2;
         } else {
-          tooltip.top = insets.top + margin;
+          const originalBottom = newMeasuredLayout.height - (rect.y - margin);
+          // Clamp tooltip.bottom so the top edge doesn't exceed safe area
+          const maxBottom =
+            tooltipHeight > 0
+              ? newMeasuredLayout.height - tooltipHeight - insets.top - margin
+              : originalBottom;
+          tooltip.bottom = Math.min(originalBottom, maxBottom);
           arrow.borderTopColor = arrowColor;
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
           arrow.borderBottomColor = "transparent";
-          arrow.bottom =
-            newMeasuredLayout.height - (rect.y - margin) - arrowSize * 2;
+          arrow.bottom = tooltip.bottom - arrowSize * 2;
         }
 
         if (horizontalPosition === "left") {
@@ -239,8 +247,15 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         isAnimated,
         arrowSize,
         margin,
+        tooltipHeight,
       ],
     );
+
+    useEffect(() => {
+      if (tooltipHeight > 0 && currentRectRef.current) {
+        void _animateMove(currentRectRef.current);
+      }
+    }, [tooltipHeight, _animateMove]);
 
     const animateMove = useCallback<CopilotModalHandle["animateMove"]>(
       async (rect) => {
@@ -364,6 +379,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           <Animated.View
             key="tooltip"
             style={[styles.tooltip, tooltipStyles, tooltipStyle]}
+            onLayout={(e) => {
+              setTooltipHeight(e.nativeEvent.layout.height);
+            }}
           >
             <TooltipComponent labels={labels} />
           </Animated.View>
