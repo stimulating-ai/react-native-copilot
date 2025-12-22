@@ -95,7 +95,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const [containerVisible, setContainerVisible] = useState(false);
     const [tooltipHeight, setTooltipHeight] = useState(0);
     const tooltipHeightRef = useRef(0);
-    const currentRectRef = useRef<LayoutRectangle | null>(null);
+    const currentRectRef = useRef<{
+      rect: LayoutRectangle;
+      stepName: string | undefined;
+    } | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
     const [tooltipOpacity] = useState(
       () => new Animated.Value(OPACITY_STARTING_VALUE),
@@ -148,7 +151,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
 
     const _animateMove = useCallback(
       async (rect: LayoutRectangle) => {
-        currentRectRef.current = { ...rect };
+        currentRectRef.current = { rect: { ...rect }, stepName: currentStep?.name };
         const newMeasuredLayout = await measure();
         if (!androidStatusBarVisible && Platform.OS === "android") {
           rect.y -= StatusBar.currentHeight ?? 0;
@@ -268,6 +271,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         animatedValues,
         animationDuration,
         arrowColor,
+        currentStep?.name,
         easing,
         insets,
         isAnimated,
@@ -415,9 +419,14 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
               const newHeight = e.nativeEvent.layout.height;
               tooltipHeightRef.current = newHeight;
               setTooltipHeight(newHeight);
-              // Directly trigger recalculation with latest height
-              if (newHeight > 0 && currentRectRef.current && animateMoveRef.current) {
-                void animateMoveRef.current(currentRectRef.current);
+              // Only re-animate if we're still on the same step the rect was calculated for
+              // This prevents snap-back during step transitions when onLayout fires with stale rect
+              if (
+                newHeight > 0 &&
+                currentRectRef.current?.stepName === currentStep?.name &&
+                animateMoveRef.current
+              ) {
+                void animateMoveRef.current(currentRectRef.current.rect);
               }
             }}
           >
