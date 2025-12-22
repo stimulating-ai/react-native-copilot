@@ -62,6 +62,7 @@ export const CopilotProvider = ({
   const startTries = useRef(0);
   const copilotEvents = useRef(mitt<Events>()).current;
   const modal = useRef<CopilotModalHandle | null>(null);
+  const isAnimating = useRef(false);
 
   const [visible, setVisibility] = useStateWithAwait(false);
   const [scrollView, setScrollView] = useState<ScrollView | null>(null);
@@ -102,6 +103,7 @@ export const CopilotProvider = ({
 
   const setCurrentStep = useCallback(
     async (step?: Step, move: boolean = true) => {
+      isAnimating.current = true;
       setCurrentStepState(step);
       copilotEvents.emit("stepChange", step);
 
@@ -122,8 +124,11 @@ export const CopilotProvider = ({
         () => {
           if (move && step) {
             void moveModalToStep(step).then(() => {
+              isAnimating.current = false;
               copilotEvents.emit("stepMove");
             });
+          } else {
+            isAnimating.current = false;
           }
         },
         scrollView != null ? 100 : 0,
@@ -175,17 +180,20 @@ export const CopilotProvider = ({
   }, [copilotEvents, setVisibility]);
 
   const next = useCallback(async () => {
+    if (isAnimating.current) return;
     await setCurrentStep(getNextStep());
   }, [getNextStep, setCurrentStep]);
 
   const nth = useCallback(
     async (n: number) => {
+      if (isAnimating.current) return;
       await setCurrentStep(getNthStep(n));
     },
     [getNthStep, setCurrentStep],
   );
 
   const prev = useCallback(async () => {
+    if (isAnimating.current) return;
     await setCurrentStep(getPrevStep());
   }, [getPrevStep, setCurrentStep]);
 
