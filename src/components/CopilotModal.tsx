@@ -98,6 +98,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const currentRectRef = useRef<{
       rect: LayoutRectangle;
       stepName: string | undefined;
+      calculatedWithHeight: number;
     } | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
     const [tooltipOpacity] = useState(
@@ -151,7 +152,11 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
 
     const _animateMove = useCallback(
       async (rect: LayoutRectangle) => {
-        currentRectRef.current = { rect: { ...rect }, stepName: currentStep?.name };
+        currentRectRef.current = {
+          rect: { ...rect },
+          stepName: currentStep?.name,
+          calculatedWithHeight: tooltipHeightRef.current,
+        };
         const newMeasuredLayout = await measure();
         if (!androidStatusBarVisible && Platform.OS === "android") {
           rect.y -= StatusBar.currentHeight ?? 0;
@@ -419,11 +424,14 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
               const newHeight = e.nativeEvent.layout.height;
               tooltipHeightRef.current = newHeight;
               setTooltipHeight(newHeight);
-              // Only re-animate if we're still on the same step the rect was calculated for
-              // This prevents snap-back during step transitions when onLayout fires with stale rect
+              // Only re-animate if:
+              // 1. We're still on the same step the rect was calculated for
+              // 2. The height has actually changed since last calculation
+              // This prevents snap-back and duplicate animations
               if (
                 newHeight > 0 &&
                 currentRectRef.current?.stepName === currentStep?.name &&
+                currentRectRef.current?.calculatedWithHeight !== newHeight &&
                 animateMoveRef.current
               ) {
                 void animateMoveRef.current(currentRectRef.current.rect);
