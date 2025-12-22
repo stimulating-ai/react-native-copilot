@@ -51,22 +51,25 @@ export const SvgMask = ({
     new Animated.ValueXY(position)
   ).current;
   const maskRef = useRef<any>(null);
+  // Use ref for currentStep to avoid recreating animationListener on step changes
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
 
   const animationListener = useCallback(() => {
     const d: string = svgMaskPath({
       size: sizeValue,
       position: positionValue,
       canvasSize,
-      step: currentStep,
+      step: currentStepRef.current,
     });
 
     if (maskRef.current) {
       maskRef.current.setNativeProps({ d });
     }
-  }, [canvasSize, currentStep, svgMaskPath, positionValue, sizeValue]);
+  }, [canvasSize, svgMaskPath, positionValue, sizeValue]);
 
   const animate = useCallback(
-    (toSize: ValueXY = size, toPosition: ValueXY = position) => {
+    (toSize: ValueXY, toPosition: ValueXY) => {
       if (animated) {
         Animated.parallel([
           Animated.timing(sizeValue, {
@@ -87,15 +90,7 @@ export const SvgMask = ({
         positionValue.setValue(toPosition);
       }
     },
-    [
-      animated,
-      animationDuration,
-      easing,
-      positionValue,
-      position,
-      size,
-      sizeValue,
-    ]
+    [animated, animationDuration, easing, positionValue, sizeValue]
   );
 
   useEffect(() => {
@@ -105,11 +100,15 @@ export const SvgMask = ({
     };
   }, [animationListener, positionValue]);
 
+  // Use ref to avoid re-running effect when animate callback is recreated
+  const animateRef = useRef(animate);
+  animateRef.current = animate;
+
   useEffect(() => {
     if (size && position) {
-      animate(size, position);
+      animateRef.current(size, position);
     }
-  }, [animate, position, size]);
+  }, [position, size]);
 
   const handleLayout = ({
     nativeEvent: {
