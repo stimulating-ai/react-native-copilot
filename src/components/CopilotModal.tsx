@@ -308,8 +308,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       setIsAnimated(false);
       setContainerVisible(false);
       setLayout(undefined);
+      setMaskRect(undefined);
       setTooltipHeight(0);
       tooltipHeightRef.current = 0;
+      currentRectRef.current = null;
       tooltipOpacity.setValue(OPACITY_STARTING_VALUE);
     };
 
