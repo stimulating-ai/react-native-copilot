@@ -51,27 +51,34 @@ export const SvgMask = ({
     new Animated.ValueXY(position)
   ).current;
   const maskRef = useRef<any>(null);
-  // Use ref for currentStep to avoid recreating animationListener on step changes
+
+  // Use refs to avoid recreating callbacks - keeps listener stable
   const currentStepRef = useRef(currentStep);
   currentStepRef.current = currentStep;
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
+  const svgMaskPathRef = useRef(svgMaskPath);
+  svgMaskPathRef.current = svgMaskPath;
+
   // Track if first render (skip animation on mount)
   const isFirstRender = useRef(true);
   // Use refs for animation config to avoid recreating animate callback
   const animationConfigRef = useRef({ easing, animationDuration, animated });
   animationConfigRef.current = { easing, animationDuration, animated };
 
+  // Stable listener that reads all values from refs
   const animationListener = useCallback(() => {
-    const d: string = svgMaskPath({
+    const d: string = svgMaskPathRef.current({
       size: sizeValue,
       position: positionValue,
-      canvasSize,
+      canvasSize: canvasSizeRef.current,
       step: currentStepRef.current,
     });
 
     if (maskRef.current) {
       maskRef.current.setNativeProps({ d });
     }
-  }, [canvasSize, svgMaskPath, positionValue, sizeValue]);
+  }, [positionValue, sizeValue]);
 
   // Stable animate function that reads config from ref
   const animate = useCallback(
@@ -105,6 +112,7 @@ export const SvgMask = ({
     [positionValue, sizeValue]
   );
 
+  // Add listener once on mount - it's now stable and won't be recreated
   useEffect(() => {
     const id = positionValue.addListener(animationListener);
     return () => {
@@ -112,7 +120,7 @@ export const SvgMask = ({
     };
   }, [animationListener, positionValue]);
 
-  // Update animated values when props change - only depends on size/position, not animate
+  // Update animated values when props change
   useEffect(() => {
     if (size && position) {
       if (isFirstRender.current) {
@@ -126,6 +134,18 @@ export const SvgMask = ({
       }
     }
   }, [animate, position, size, positionValue, sizeValue]);
+
+  // When canvasSize changes, update the path immediately
+  useEffect(() => {
+    animationListener();
+  }, [animationListener, canvasSize]);
+
+  // Set initial path when maskRef becomes available
+  useEffect(() => {
+    if (maskRef.current) {
+      animationListener();
+    }
+  }, [animationListener]);
 
   const handleLayout = ({
     nativeEvent: {
@@ -151,12 +171,7 @@ export const SvgMask = ({
             fill={backdropColor}
             fillRule="evenodd"
             strokeWidth={1}
-            d={svgMaskPath({
-              size: sizeValue,
-              position: positionValue,
-              canvasSize,
-              step: currentStep,
-            })}
+            d=""
           />
         </Svg>
       ) : null}
