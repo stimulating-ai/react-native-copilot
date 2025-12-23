@@ -101,6 +101,9 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       calculatedWithHeight: number;
     } | null>(null);
     const animateMoveRef = useRef<(rect: LayoutRectangle) => Promise<void>>();
+    // Use ref to always have latest step name (avoids stale closure issues)
+    const currentStepNameRef = useRef(currentStep?.name);
+    currentStepNameRef.current = currentStep?.name;
     const [tooltipOpacity] = useState(
       () => new Animated.Value(OPACITY_STARTING_VALUE),
     );
@@ -154,7 +157,7 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       async (rect: LayoutRectangle) => {
         currentRectRef.current = {
           rect: { ...rect },
-          stepName: currentStep?.name,
+          stepName: currentStepNameRef.current,
           calculatedWithHeight: tooltipHeightRef.current,
         };
         const newMeasuredLayout = await measure();
@@ -280,7 +283,6 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         animatedValues,
         animationDuration,
         arrowColor,
-        currentStep?.name,
         easing,
         insets,
         isAnimated,
@@ -435,18 +437,6 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
               const newHeight = e.nativeEvent.layout.height;
               tooltipHeightRef.current = newHeight;
               setTooltipHeight(newHeight);
-              // Only re-animate if:
-              // 1. We're still on the same step the rect was calculated for
-              // 2. The height has actually changed since last calculation
-              // This prevents snap-back and duplicate animations
-              if (
-                newHeight > 0 &&
-                currentRectRef.current?.stepName === currentStep?.name &&
-                currentRectRef.current?.calculatedWithHeight !== newHeight &&
-                animateMoveRef.current
-              ) {
-                void animateMoveRef.current(currentRectRef.current.rect);
-              }
             }}
           >
             <TooltipComponent labels={labels} />

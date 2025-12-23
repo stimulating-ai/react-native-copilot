@@ -56,6 +56,8 @@ export const SvgMask = ({
   currentStepRef.current = currentStep;
   // Track last animation target to prevent duplicate animations
   const lastAnimationTarget = useRef<{ size: ValueXY; position: ValueXY } | null>(null);
+  // Lock to prevent animations while one is in progress
+  const isAnimatingRef = useRef(false);
 
   const animationListener = useCallback(() => {
     const d: string = svgMaskPath({
@@ -72,24 +74,28 @@ export const SvgMask = ({
 
   const animate = useCallback(
     (toSize: ValueXY, toPosition: ValueXY) => {
-      // Skip if already animating to the same target (prevents rubber banding on double-click)
+      // Check last animation target to prevent duplicate animations
       const last = lastAnimationTarget.current;
-      if (
-        last &&
+      const isSameAsLast = last &&
         last.size.x === toSize.x &&
         last.size.y === toSize.y &&
         last.position.x === toPosition.x &&
-        last.position.y === toPosition.y
-      ) {
+        last.position.y === toPosition.y;
+
+      if (isSameAsLast) {
         return;
       }
+
+      // If currently animating, stop and update target
+      if (isAnimatingRef.current) {
+        sizeValue.stopAnimation();
+        positionValue.stopAnimation();
+      }
+
       lastAnimationTarget.current = { size: toSize, position: toPosition };
 
-      // Stop any running animations before starting new ones
-      sizeValue.stopAnimation();
-      positionValue.stopAnimation();
-
       if (animated) {
+        isAnimatingRef.current = true;
         Animated.parallel([
           Animated.timing(sizeValue, {
             toValue: toSize,
@@ -103,7 +109,11 @@ export const SvgMask = ({
             easing,
             useNativeDriver: false,
           }),
-        ]).start();
+        ]).start(({ finished }) => {
+          if (finished) {
+            isAnimatingRef.current = false;
+          }
+        });
       } else {
         sizeValue.setValue(toSize);
         positionValue.setValue(toPosition);
