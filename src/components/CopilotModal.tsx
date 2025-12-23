@@ -244,6 +244,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           ["stepNumberLeft", stepNumberLeft],
         ] as const;
 
+        // Stop any running animations before starting new ones
+        animatedValues.top.stopAnimation();
+        animatedValues.stepNumberLeft.stopAnimation();
+
         if (isAnimated) {
           Animated.parallel(
             animate.map(([key, value]) => {

@@ -16,6 +16,10 @@ export const ViewMask = (props: MaskProps) => {
 
   const animate = useCallback(
     (size: ValueXY = props.size, position: ValueXY = props.position): void => {
+      // Stop any running animations before starting new ones
+      sizeValue.stopAnimation();
+      positionValue.stopAnimation();
+
       if (animated) {
         Animated.parallel([
           Animated.timing(sizeValue, {

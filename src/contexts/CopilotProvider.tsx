@@ -159,8 +159,10 @@ export const CopilotProvider = ({
         copilotEvents.emit("start");
         // Set visibility first to ensure modal is mounted before we try to animate
         await setVisibility(true);
-        await setCurrentStep(currentStep);
+        // Pass move=false since we call moveModalToStep explicitly after
+        await setCurrentStep(currentStep, false);
         await moveModalToStep(currentStep);
+        isAnimating.current = false;
         startTries.current = 0;
       }
     },

@@ -70,6 +70,10 @@ export const SvgMask = ({
 
   const animate = useCallback(
     (toSize: ValueXY, toPosition: ValueXY) => {
+      // Stop any running animations before starting new ones
+      sizeValue.stopAnimation();
+      positionValue.stopAnimation();
+
       if (animated) {
         Animated.parallel([
           Animated.timing(sizeValue, {
