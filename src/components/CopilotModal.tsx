@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -354,6 +355,25 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     const modalVisible = containerVisible || visible;
     const contentVisible = layout != null && containerVisible;
 
+    // Memoize size and position to prevent unnecessary re-renders/animations
+    const maskSize = useMemo(
+      () =>
+        maskRect && {
+          x: maskRect.width,
+          y: maskRect.height,
+        },
+      [maskRect?.width, maskRect?.height],
+    );
+
+    const maskPosition = useMemo(
+      () =>
+        maskRect && {
+          x: maskRect.x,
+          y: maskRect.y,
+        },
+      [maskRect?.x, maskRect?.y],
+    );
+
     if (!modalVisible) {
       return null;
     }
@@ -381,20 +401,13 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           : // eslint-disable-next-line @typescript-eslint/no-var-requires
             require("./ViewMask").ViewMask;
 
-      const size = maskRect && {
-        x: maskRect.width,
-        y: maskRect.height,
-      };
-
-      const position = maskRect;
-
       return (
         <MaskComponent
           animated={animated}
           layout={layout}
           style={styles.overlayContainer}
-          size={size}
-          position={position}
+          size={maskSize}
+          position={maskPosition}
           easing={easing}
           animationDuration={animationDuration}
           backdropColor={backdropColor}
