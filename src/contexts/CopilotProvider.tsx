@@ -103,6 +103,10 @@ export const CopilotProvider = ({
 
   const setCurrentStep = useCallback(
     async (step?: Step, move: boolean = true) => {
+      // Block if already animating (double-click protection)
+      if (isAnimating.current) {
+        return;
+      }
       isAnimating.current = true;
       setCurrentStepState(step);
       copilotEvents.emit("stepChange", step);

@@ -13,9 +13,24 @@ export const ViewMask = (props: MaskProps) => {
     new Animated.ValueXY(props.position)
   ).current;
   const [animated, setAnimated] = useState(false);
+  // Track last animation target to prevent duplicate animations
+  const lastAnimationTarget = useRef<{ size: ValueXY; position: ValueXY } | null>(null);
 
   const animate = useCallback(
     (size: ValueXY = props.size, position: ValueXY = props.position): void => {
+      // Skip if already animating to the same target (prevents rubber banding on double-click)
+      const last = lastAnimationTarget.current;
+      if (
+        last &&
+        last.size.x === size.x &&
+        last.size.y === size.y &&
+        last.position.x === position.x &&
+        last.position.y === position.y
+      ) {
+        return;
+      }
+      lastAnimationTarget.current = { size, position };
+
       // Stop any running animations before starting new ones
       sizeValue.stopAnimation();
       positionValue.stopAnimation();

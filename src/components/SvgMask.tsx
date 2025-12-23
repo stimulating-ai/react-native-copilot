@@ -54,6 +54,8 @@ export const SvgMask = ({
   // Use ref for currentStep to avoid recreating animationListener on step changes
   const currentStepRef = useRef(currentStep);
   currentStepRef.current = currentStep;
+  // Track last animation target to prevent duplicate animations
+  const lastAnimationTarget = useRef<{ size: ValueXY; position: ValueXY } | null>(null);
 
   const animationListener = useCallback(() => {
     const d: string = svgMaskPath({
@@ -70,6 +72,19 @@ export const SvgMask = ({
 
   const animate = useCallback(
     (toSize: ValueXY, toPosition: ValueXY) => {
+      // Skip if already animating to the same target (prevents rubber banding on double-click)
+      const last = lastAnimationTarget.current;
+      if (
+        last &&
+        last.size.x === toSize.x &&
+        last.size.y === toSize.y &&
+        last.position.x === toPosition.x &&
+        last.position.y === toPosition.y
+      ) {
+        return;
+      }
+      lastAnimationTarget.current = { size: toSize, position: toPosition };
+
       // Stop any running animations before starting new ones
       sizeValue.stopAnimation();
       positionValue.stopAnimation();
