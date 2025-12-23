@@ -35,6 +35,9 @@ import {
 // Setting opacity to 0.02 to workaround glass view opacity bug.
 const OPACITY_STARTING_VALUE = 1;
 
+// Stable default easing to avoid recreating on every render
+const DEFAULT_EASING = Easing.elastic(0.7);
+
 type Props = CopilotOptions;
 
 const noop = () => {};
@@ -53,7 +56,7 @@ export interface CopilotModalHandle {
 export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
   function CopilotModal(
     {
-      easing = Easing.elastic(0.7),
+      easing = DEFAULT_EASING,
       animationDuration = 400,
       tooltipComponent: TooltipComponent = Tooltip,
       tooltipStyle = {},

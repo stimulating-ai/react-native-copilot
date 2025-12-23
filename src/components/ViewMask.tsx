@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
 import { Animated, View } from "react-native";
 import { styles } from "./style";
@@ -12,26 +12,25 @@ export const ViewMask = (props: MaskProps) => {
   const positionValue = useRef<Animated.ValueXY>(
     new Animated.ValueXY(props.position)
   ).current;
-  const [animated, setAnimated] = useState(false);
-  // Track last animation target to prevent duplicate animations
-  const lastAnimationTarget = useRef<{ size: ValueXY; position: ValueXY } | null>(null);
+  const isFirstRender = useRef(true);
+  // Use refs for animation config to avoid recreating animate callback
+  const animationConfigRef = useRef({
+    easing: props.easing,
+    animationDuration: props.animationDuration,
+    animated: props.animated,
+  });
+  animationConfigRef.current = {
+    easing: props.easing,
+    animationDuration: props.animationDuration,
+    animated: props.animated,
+  };
 
+  // Stable animate function that reads config from ref
   const animate = useCallback(
-    (size: ValueXY = props.size, position: ValueXY = props.position): void => {
-      // Skip if already animating to the same target (prevents rubber banding on double-click)
-      const last = lastAnimationTarget.current;
-      if (
-        last &&
-        last.size.x === size.x &&
-        last.size.y === size.y &&
-        last.position.x === position.x &&
-        last.position.y === position.y
-      ) {
-        return;
-      }
-      lastAnimationTarget.current = { size, position };
+    (size: ValueXY, position: ValueXY): void => {
+      const { easing, animationDuration, animated } = animationConfigRef.current;
 
-      // Stop any running animations before starting new ones
+      // Stop any running animations
       sizeValue.stopAnimation();
       positionValue.stopAnimation();
 
@@ -39,40 +38,36 @@ export const ViewMask = (props: MaskProps) => {
         Animated.parallel([
           Animated.timing(sizeValue, {
             toValue: size,
-            duration: props.animationDuration,
-            easing: props.easing,
+            duration: animationDuration,
+            easing,
             useNativeDriver: false,
           }),
           Animated.timing(positionValue, {
             toValue: position,
-            duration: props.animationDuration,
-            easing: props.easing,
+            duration: animationDuration,
+            easing,
             useNativeDriver: false,
           }),
         ]).start();
       } else {
         sizeValue.setValue(size);
         positionValue.setValue(position);
-        setAnimated(props.animated);
       }
     },
-    [
-      animated,
-      positionValue,
-      props.animated,
-      props.animationDuration,
-      props.easing,
-      props.position,
-      props.size,
-      sizeValue,
-    ]
+    [positionValue, sizeValue]
   );
 
   useEffect(() => {
-    if (props.position || props.size) {
-      animate(props.size, props.position);
+    if (props.position && props.size) {
+      if (isFirstRender.current) {
+        isFirstRender.current = false;
+        sizeValue.setValue(props.size);
+        positionValue.setValue(props.position);
+      } else {
+        animate(props.size, props.position);
+      }
     }
-  }, [animate, props.position, props.size]);
+  }, [animate, props.position, props.size, positionValue, sizeValue]);
 
   const width = props.layout ? props.layout.width : 500;
   const height = props.layout ? props.layout.height : 500;

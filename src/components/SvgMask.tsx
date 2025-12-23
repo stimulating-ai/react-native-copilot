@@ -54,10 +54,11 @@ export const SvgMask = ({
   // Use ref for currentStep to avoid recreating animationListener on step changes
   const currentStepRef = useRef(currentStep);
   currentStepRef.current = currentStep;
-  // Track last animation target to prevent duplicate animations
-  const lastAnimationTarget = useRef<{ size: ValueXY; position: ValueXY } | null>(null);
-  // Lock to prevent animations while one is in progress
-  const isAnimatingRef = useRef(false);
+  // Track if first render (skip animation on mount)
+  const isFirstRender = useRef(true);
+  // Use refs for animation config to avoid recreating animate callback
+  const animationConfigRef = useRef({ easing, animationDuration, animated });
+  animationConfigRef.current = { easing, animationDuration, animated };
 
   const animationListener = useCallback(() => {
     const d: string = svgMaskPath({
@@ -72,54 +73,36 @@ export const SvgMask = ({
     }
   }, [canvasSize, svgMaskPath, positionValue, sizeValue]);
 
+  // Stable animate function that reads config from ref
   const animate = useCallback(
     (toSize: ValueXY, toPosition: ValueXY) => {
-      // Check last animation target to prevent duplicate animations
-      const last = lastAnimationTarget.current;
-      const isSameAsLast = last &&
-        last.size.x === toSize.x &&
-        last.size.y === toSize.y &&
-        last.position.x === toPosition.x &&
-        last.position.y === toPosition.y;
+      const { easing: e, animationDuration: d, animated: a } = animationConfigRef.current;
 
-      if (isSameAsLast) {
-        return;
-      }
+      // Stop any running animations
+      sizeValue.stopAnimation();
+      positionValue.stopAnimation();
 
-      // If currently animating, stop and update target
-      if (isAnimatingRef.current) {
-        sizeValue.stopAnimation();
-        positionValue.stopAnimation();
-      }
-
-      lastAnimationTarget.current = { size: toSize, position: toPosition };
-
-      if (animated) {
-        isAnimatingRef.current = true;
+      if (a) {
         Animated.parallel([
           Animated.timing(sizeValue, {
             toValue: toSize,
-            duration: animationDuration,
-            easing,
+            duration: d,
+            easing: e,
             useNativeDriver: false,
           }),
           Animated.timing(positionValue, {
             toValue: toPosition,
-            duration: animationDuration,
-            easing,
+            duration: d,
+            easing: e,
             useNativeDriver: false,
           }),
-        ]).start(({ finished }) => {
-          if (finished) {
-            isAnimatingRef.current = false;
-          }
-        });
+        ]).start();
       } else {
         sizeValue.setValue(toSize);
         positionValue.setValue(toPosition);
       }
     },
-    [animated, animationDuration, easing, positionValue, sizeValue]
+    [positionValue, sizeValue]
   );
 
   useEffect(() => {
@@ -129,15 +112,20 @@ export const SvgMask = ({
     };
   }, [animationListener, positionValue]);
 
-  // Use ref to avoid re-running effect when animate callback is recreated
-  const animateRef = useRef(animate);
-  animateRef.current = animate;
-
+  // Update animated values when props change - only depends on size/position, not animate
   useEffect(() => {
     if (size && position) {
-      animateRef.current(size, position);
+      if (isFirstRender.current) {
+        // Don't animate on first render, just set values
+        isFirstRender.current = false;
+        sizeValue.setValue(size);
+        positionValue.setValue(position);
+      } else {
+        // Animate to new position
+        animate(size, position);
+      }
     }
-  }, [position, size]);
+  }, [animate, position, size, positionValue, sizeValue]);
 
   const handleLayout = ({
     nativeEvent: {
