@@ -251,23 +251,6 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         animatedValues.top.stopAnimation();
         animatedValues.stepNumberLeft.stopAnimation();
 
-        if (isAnimated) {
-          Animated.parallel(
-            animate.map(([key, value]) => {
-              return Animated.timing(animatedValues[key], {
-                toValue: value,
-                duration: animationDuration,
-                easing,
-                useNativeDriver: false,
-              });
-            }),
-          ).start();
-        } else {
-          animate.forEach(([key, value]) => {
-            animatedValues[key].setValue(value);
-          });
-        }
-
         setTooltipStyles(tooltip);
         setArrowStyles(arrow);
         setLayout(newMeasuredLayout);
@@ -276,6 +259,27 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           height: rect.height,
           x: Math.floor(Math.max(rect.x, 0)),
           y: Math.floor(Math.max(rect.y, 0)),
+        });
+
+        // Wait for animation to complete before resolving
+        await new Promise<void>((resolve) => {
+          if (isAnimated) {
+            Animated.parallel(
+              animate.map(([key, value]) => {
+                return Animated.timing(animatedValues[key], {
+                  toValue: value,
+                  duration: animationDuration,
+                  easing,
+                  useNativeDriver: false,
+                });
+              }),
+            ).start(() => resolve());
+          } else {
+            animate.forEach(([key, value]) => {
+              animatedValues[key].setValue(value);
+            });
+            resolve();
+          }
         });
       },
       [

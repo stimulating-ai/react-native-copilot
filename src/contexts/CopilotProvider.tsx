@@ -124,19 +124,18 @@ export const CopilotProvider = ({
         }
       }
 
-      setTimeout(
-        () => {
-          if (move && step) {
+      if (move && step) {
+        setTimeout(
+          () => {
             void moveModalToStep(step).then(() => {
               isAnimating.current = false;
               copilotEvents.emit("stepMove");
             });
-          } else {
-            isAnimating.current = false;
-          }
-        },
-        scrollView != null ? 100 : 0,
-      );
+          },
+          scrollView != null ? 100 : 0,
+        );
+      }
+      // When move=false, caller is responsible for animation and resetting isAnimating
     },
     [copilotEvents, moveModalToStep, scrollView, setCurrentStepState],
   );
