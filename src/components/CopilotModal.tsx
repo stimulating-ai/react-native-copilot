@@ -309,9 +309,14 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       setContainerVisible(false);
       setLayout(undefined);
       setMaskRect(undefined);
+      setTooltipStyles({});
+      setArrowStyles({});
       setTooltipHeight(0);
       tooltipHeightRef.current = 0;
       currentRectRef.current = null;
+      layoutRef.current = makeDefaultLayout();
+      animatedValues.top.setValue(0);
+      animatedValues.stepNumberLeft.setValue(0);
       tooltipOpacity.setValue(OPACITY_STARTING_VALUE);
     };
 

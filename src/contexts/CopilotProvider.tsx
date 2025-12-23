@@ -176,8 +176,10 @@ export const CopilotProvider = ({
 
   const stop = useCallback(async () => {
     await setVisibility(false);
+    setCurrentStepState(undefined);
+    isAnimating.current = false;
     copilotEvents.emit("stop");
-  }, [copilotEvents, setVisibility]);
+  }, [copilotEvents, setCurrentStepState, setVisibility]);
 
   const next = useCallback(async () => {
     if (isAnimating.current) return;
