@@ -157,9 +157,10 @@ export const CopilotProvider = ({
         });
       } else {
         copilotEvents.emit("start");
+        // Set visibility first to ensure modal is mounted before we try to animate
+        await setVisibility(true);
         await setCurrentStep(currentStep);
         await moveModalToStep(currentStep);
-        await setVisibility(true);
         startTries.current = 0;
       }
     },
@@ -176,10 +177,9 @@ export const CopilotProvider = ({
 
   const stop = useCallback(async () => {
     await setVisibility(false);
-    setCurrentStepState(undefined);
     isAnimating.current = false;
     copilotEvents.emit("stop");
-  }, [copilotEvents, setCurrentStepState, setVisibility]);
+  }, [copilotEvents, setVisibility]);
 
   const next = useCallback(async () => {
     if (isAnimating.current) return;
