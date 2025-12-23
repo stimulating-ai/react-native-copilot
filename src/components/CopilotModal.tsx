@@ -32,7 +32,7 @@ import {
 } from "./style";
 
 // Setting opacity to 0.02 to workaround glass view opacity bug.
-const OPACITY_STARTING_VALUE = 0.02;
+const OPACITY_STARTING_VALUE = 1;
 
 type Props = CopilotOptions;
 
