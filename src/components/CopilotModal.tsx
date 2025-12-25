@@ -131,6 +131,19 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
       }
     }, [tooltipHeight, tooltipOpacity]);
 
+    // Re-calculate tooltip position when height changes to ensure it stays within safe area
+    useEffect(() => {
+      if (
+        tooltipHeight > 0 &&
+        currentRectRef.current &&
+        currentRectRef.current.calculatedWithHeight !== tooltipHeight &&
+        currentRectRef.current.stepName === currentStepNameRef.current
+      ) {
+        // Re-run positioning with the same rect now that we know the actual height
+        void animateMoveRef.current?.(currentRectRef.current.rect);
+      }
+    }, [tooltipHeight]);
+
     useEffect(() => {
       if (!visible) {
         reset();
@@ -188,8 +201,27 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         const relativeToBottom = Math.abs(center.y - newMeasuredLayout.height);
         const relativeToRight = Math.abs(center.x - newMeasuredLayout.width);
 
-        const verticalPosition =
-          relativeToBottom > relativeToTop ? "bottom" : "top";
+        // Calculate available space above and below the target element
+        const spaceAbove = rect.y - insets.top - margin;
+        const spaceBelow = newMeasuredLayout.height - (rect.y + rect.height) - insets.bottom - margin;
+
+        // Choose vertical position based on available space, preferring below
+        // If we know the tooltip height, use it to make a smarter decision
+        const knownHeight = tooltipHeightRef.current;
+        let verticalPosition: "bottom" | "top";
+        if (knownHeight > 0) {
+          // If tooltip fits below, use below; otherwise use above if it fits; otherwise use whichever has more space
+          if (spaceBelow >= knownHeight) {
+            verticalPosition = "bottom";
+          } else if (spaceAbove >= knownHeight) {
+            verticalPosition = "top";
+          } else {
+            verticalPosition = spaceBelow >= spaceAbove ? "bottom" : "top";
+          }
+        } else {
+          // Fall back to original logic when height is unknown
+          verticalPosition = relativeToBottom > relativeToTop ? "bottom" : "top";
+        }
         const horizontalPosition =
           relativeToLeft > relativeToRight ? "left" : "right";
 
@@ -200,10 +232,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
 
         if (verticalPosition === "bottom") {
           const idealTop = rect.y + rect.height + margin;
-          // Clamp tooltip.top so the bottom edge doesn't exceed safe area
+          // Clamp tooltip.top so the bottom edge doesn't exceed safe area (use ref for latest value)
           const maxTop =
-            tooltipHeight > 0
-              ? newMeasuredLayout.height - tooltipHeight - insets.bottom - margin
+            knownHeight > 0
+              ? newMeasuredLayout.height - knownHeight - insets.bottom - margin
               : idealTop;
           tooltip.top = Math.max(Math.min(idealTop, maxTop), insets.top + margin);
           arrow.borderBottomColor = arrowColor;
@@ -213,11 +245,14 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
           arrow.top = tooltip.top - arrowSize * 2;
         } else {
           tooltip.bottom = newMeasuredLayout.height - (rect.y - margin);
-          // Clamp so top of tooltip doesn't exceed safe area (use ref for latest value)
-          if (tooltipHeightRef.current > 0) {
-            const maxBottom = newMeasuredLayout.height - tooltipHeightRef.current - insets.top - margin;
-            tooltip.bottom = Math.min(tooltip.bottom, maxBottom);
-          }
+          // Clamp so tooltip stays within safe area
+          // Minimum bottom = margin + insets.bottom (tooltip can't go below safe area)
+          const minBottom = margin + insets.bottom;
+          // Maximum bottom = layoutHeight - knownHeight - insets.top - margin (top of tooltip can't go above safe area)
+          const maxBottom = knownHeight > 0
+            ? newMeasuredLayout.height - knownHeight - insets.top - margin
+            : tooltip.bottom;
+          tooltip.bottom = Math.max(Math.min(tooltip.bottom, maxBottom), minBottom);
           arrow.borderTopColor = arrowColor;
           arrow.borderLeftColor = "transparent";
           arrow.borderRightColor = "transparent";
