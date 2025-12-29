@@ -132,7 +132,6 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
     }, [tooltipHeight, tooltipOpacity]);
 
     // Re-calculate tooltip position when height changes to ensure it stays within safe area
-    // Only re-calculate if the tooltip would actually be clipped or position needs to flip
     useEffect(() => {
       if (
         tooltipHeight > 0 &&
@@ -140,43 +139,10 @@ export const CopilotModal = forwardRef<CopilotModalHandle, Props>(
         currentRectRef.current.calculatedWithHeight !== tooltipHeight &&
         currentRectRef.current.stepName === currentStepNameRef.current
       ) {
-        const { rect } = currentRectRef.current;
-        const currentLayout = layoutRef.current;
-
-        // Only re-calculate if we have valid layout
-        if (currentLayout.height > 0) {
-          const spaceAbove = rect.y - insets.top - margin;
-          const spaceBelow = currentLayout.height - (rect.y + rect.height) - insets.bottom - margin;
-
-          // Determine what position was likely chosen initially
-          const center = rect.y + rect.height / 2;
-          const relativeToTop = center;
-          const relativeToBottom = Math.abs(center - currentLayout.height);
-          const initiallyChoseBottom = relativeToBottom > relativeToTop;
-
-          // Check if the chosen position can fit the actual tooltip
-          const chosenSpaceFits = initiallyChoseBottom
-            ? spaceBelow >= tooltipHeight
-            : spaceAbove >= tooltipHeight;
-
-          // Only re-calculate if:
-          // 1. The initially chosen position can't fit the tooltip AND
-          // 2. The other position could fit it better
-          const otherPositionBetter = initiallyChoseBottom
-            ? spaceAbove >= tooltipHeight && spaceAbove > spaceBelow
-            : spaceBelow >= tooltipHeight && spaceBelow > spaceAbove;
-
-          const shouldRecalculate = !chosenSpaceFits && otherPositionBetter;
-
-          if (shouldRecalculate) {
-            void animateMoveRef.current?.(rect);
-          } else {
-            // Update the ref so we don't keep checking
-            currentRectRef.current.calculatedWithHeight = tooltipHeight;
-          }
-        }
+        // Re-run positioning with the same rect now that we know the actual height
+        void animateMoveRef.current?.(currentRectRef.current.rect);
       }
-    }, [tooltipHeight, insets.top, insets.bottom, margin]);
+    }, [tooltipHeight]);
 
     useEffect(() => {
       if (!visible) {
